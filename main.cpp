@@ -25,7 +25,7 @@
 #include "SOIL2/SOIL2.h"
 
 // Properties
-const GLuint WIDTH = 1000, HEIGHT = 800;
+const GLuint WIDTH = 1440, HEIGHT = 900;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
 float pos1X = 0.0f,pos1Y = -0.06f,pos1Z = 2.8f;
 float pos2X = 0.0f,pos2Y = 0.06f,pos2Z = 2.6f;
@@ -36,7 +36,7 @@ float ballPosY = -0.05f;
 float ballPosZ = 2.7f;
 
 bool movebal = false;
-
+glm::vec3 oldPos;
 // Function prototypes
 void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mode );
 void MouseCallback( GLFWwindow *window, double xPos, double yPos );
@@ -67,7 +67,7 @@ int main( )
     glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
     glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
     glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
-  //  glfwWindowHint( GLFW_RESIZABLE, GL_FALSE );
+    //  glfwWindowHint( GLFW_RESIZABLE, GL_FALSE );
     
     // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow *window = glfwCreateWindow( WIDTH, HEIGHT, "Tennis", nullptr, nullptr );
@@ -86,16 +86,16 @@ int main( )
     
     double cursorX, cursorY;
     glfwGetCursorPos(window, &cursorX, &cursorY);
-
+    
     
     
     // Set the required callback functions
     glfwSetKeyCallback( window, KeyCallback );
-   // glfwSetCursorPosCallback( window, MouseCallback );
-  
+    // glfwSetCursorPosCallback( window, MouseCallback );
+    
     
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-
+    
     
     // GLFW Options
     glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_NORMAL );
@@ -114,7 +114,7 @@ int main( )
     
     // OpenGL options
     glEnable( GL_DEPTH_TEST );
-
+    
     
     
     
@@ -122,8 +122,8 @@ int main( )
     
     // Setup and compile our ground shaders
     Shader groundShader( "resources/shaders/ground.vs", "resources/shaders/ground.frag" );
-   // Shader netShader( "resources/shaders/net", "resources/shaders/net.frag" );
-
+ //   Shader netShader( "resources/shaders/net", "resources/shaders/net.frag" );
+    
     GLfloat groundVertices[] =
     {
         // Positions                  // Texture Coords
@@ -133,7 +133,7 @@ int main( )
         0.5f, -0.5f, 0.0f,             1.0f, 0.0f, // Bottom Right
         -0.5f, -0.5f, 0.0f,            0.0f, 0.0f, // Bottom Left
         -0.5f,  0.5f, 0.0f,            0.0f, 1.0f  // Top Left
-
+        
     };
     
     GLfloat netVertices[] =
@@ -165,16 +165,16 @@ int main( )
     // Load textures
     GLuint groundTexture = TextureLoading::LoadTexture( "resources/images/court_top_view1.jpg" );
     GLuint netTexture = TextureLoading::LoadTexture("resources/images/net.png");
-  
+    
     glm::mat4 groundmodel;
-    groundmodel = glm::rotate(groundmodel, glm::radians(-71.0f), glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(glm::mat4(), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    groundmodel = glm::rotate(groundmodel, glm::radians(-71.0f), glm::vec3(1.0f, 0.0f, 0.0f))*glm::rotate(groundmodel, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     
     glm::mat4 groundview;
     groundview = glm::translate(groundview, glm::vec3(0.0f, 0.0f, -0.868f));
     
     glm::mat4 groundprojection;
     groundprojection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT , 0.1f, 100.0f);
-   
+    
     //</ground>
     
     
@@ -183,21 +183,21 @@ int main( )
     
     
     
-
+    
     // Setup and compile our bat shaders
     Shader shader( "resources/shaders/modelLoading.vs", "resources/shaders/modelLoading.frag" );
     
     // Load models
     Model bat( "resources/models/sujitBat/racket.obj" );
-    Model ball( "resources/models/pokeball/pokeball.obj" );
+    Model ball( "resources/models/pgoball/PokemonGoBall.obj" );
     // Draw in wireframe
     //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     
     
-  //  glm::mat4 projection = glm::perspective( camera.GetZoom( ), ( float )SCREEN_WIDTH/( float )SCREEN_HEIGHT, 0.1f, 100.0f );
+    //  glm::mat4 projection = glm::perspective( camera.GetZoom( ), ( float )SCREEN_WIDTH/( float )SCREEN_HEIGHT, 0.1f, 100.0f );
     glm::mat4 projection = glm::perspective( glm::radians(45.0f), ( float )SCREEN_WIDTH/( float )SCREEN_HEIGHT, 0.1f, 100.0f );
-
-
+    
+    
     
     // vel of ball
     float vy = 0.0006f;
@@ -214,7 +214,7 @@ int main( )
         
         // Check and call events
         glfwPollEvents( );
-       // DoMovement( );
+        // DoMovement( );
         
         // Clear the colorbuffer
         glClearColor( 0.2f, 1.0f, 1.0f, 1.0f );
@@ -229,8 +229,9 @@ int main( )
         groundShader.Use( );
         
         // Bind Textures using texture units
-        
-        //glUniform1i( glGetUniformLocation( shader.Program, "texture1" ), 0 );
+        glActiveTexture( GL_TEXTURE0 );
+        glBindTexture( GL_TEXTURE_2D, groundTexture );
+        glUniform1i( glGetUniformLocation( shader.Program, "texture1" ), 0 );
         
         // Get the uniform locations
         GLint groundmodelLoc = glGetUniformLocation( groundShader.Program, "groundmodel" );
@@ -246,13 +247,11 @@ int main( )
         // Calculate the model matrix for each object and pass it to shader before drawing
         glUniformMatrix4fv( groundmodelLoc, 1, GL_FALSE, glm::value_ptr( groundmodel ) );
         
-        //glActiveTexture( GL_TEXTURE0 );
-        glBindTexture( GL_TEXTURE_2D, groundTexture);
         glDrawArrays( GL_TRIANGLES, 0, 6 );
         glBindVertexArray( 0 );
         
         // </ground>
-        glUseProgram(0);
+        
         
         
         
@@ -268,38 +267,47 @@ int main( )
         
         // Draw the loaded model
         glm::mat4 model;
+        double xpos = 0, ypos = 0;
+        glfwGetCursorPos(window,&xpos, &ypos);
+        
+        pos1X = (xpos/1440) * 2.0f - 1.0f;
+//        pos1Z = (ypos/900) * 2.0f - 1.0f;
+
         model = glm::translate( model, glm::vec3( pos1X, pos1Y, pos1Z ) ); // Translate it down a bit so it's at the center of the scene
+        
         model = glm::scale( model, glm::vec3( 0.002f, 0.002f, 0.002f ) );    // It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( model ) );
         bat.Draw( shader );
-      
+        
         // </bat1 model>
         
         
-      
+        
         // <bat2 model>
         
         glm::mat4 model2;
         model2 = glm::translate( model2, glm::vec3( pos2X, pos2Y, pos2Z ) ); // Translate it down a bit so it's at the center of the scene
+        
         model2 = glm::scale( model2, glm::vec3( 0.002f, 0.002f, 0.002f ) );    // It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( model2 ) );
         bat.Draw( shader );
         
         // </bat2 model>
         
-          glUseProgram(0);
+        
         
         
         // <ball model>
         
-       
-
+        
+        
         
         glm::mat4 ballModel;
         ballModel = glm::translate( ballModel, glm::vec3( ballPosX, ballPosY, ballPosZ ) );
-        ballModel = glm::scale( ballModel, glm::vec3( 0.0005f, 0.0005f, 0.0005f ) );    // It's a bit too big for our scene, so scale it down
+        ballModel = glm::scale( ballModel, glm::vec3( 0.00005f, 0.00005f, 0.00005f ) );    // It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( ballModel ) );
         ball.Draw( shader );
+        
         
         
         //move ball
@@ -309,17 +317,18 @@ int main( )
         
         if(ballPosY > 0.04438f || ballPosY < -0.05f )    vy = -vy;
         
-
-     //   std::cout << "balPosY = " << ballPosY << endl;
+        
+        //   std::cout << "balPosY = " << ballPosY << endl;
+        
         
         // </ball model>
         
-    
+        
         
         
         // Swap the buffers
         glfwSwapBuffers( window );
-
+        
     }
     
     std::cout << "x :  " << pos1X << std::endl << " y :  " << pos1Y <<  std::endl << " z :  " << pos1Z << std::endl;
@@ -360,7 +369,7 @@ void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mod
     {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
-   
+    
     if ( GLFW_KEY_UP == key && GLFW_PRESS == action )   pos1Y += 0.02;
     if ( GLFW_KEY_DOWN == key && GLFW_PRESS == action )   pos1Y -= 0.02;
     
@@ -370,25 +379,25 @@ void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mod
     if ( GLFW_KEY_W == key && GLFW_PRESS == action )   pos1Z += 0.2;
     if ( GLFW_KEY_S == key && GLFW_PRESS == action )   pos1Z -= 0.2;
     
-
+    
     
     
     
     
     
     /*
-    if ( key >= 0 && key < 1024 )
-    {
-        if ( action == GLFW_PRESS )
-        {
-            keys[key] = true;
-        }
-        else if ( action == GLFW_RELEASE )
-        {
-            keys[key] = false;
-        }
-    }
-    */
+     if ( key >= 0 && key < 1024 )
+     {
+     if ( action == GLFW_PRESS )
+     {
+     keys[key] = true;
+     }
+     else if ( action == GLFW_RELEASE )
+     {
+     keys[key] = false;
+     }
+     }
+     */
     
     
 }
@@ -404,7 +413,7 @@ void MouseCallback( GLFWwindow *window, double xPos, double yPos )
     
     GLfloat xOffset = xPos - lastX;
     GLfloat yOffset = yPos - lastY;  // Reversed since y-coordinates go from bottom to left
-
+    
     lastX = xPos;
     lastY = yPos;
     
