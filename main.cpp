@@ -36,7 +36,7 @@ float ballPosY = -0.05f;
 float ballPosZ = 2.7f;
 
 bool movebal = false;
-glm::vec3 oldPos;
+
 // Function prototypes
 void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mode );
 void MouseCallback( GLFWwindow *window, double xPos, double yPos );
@@ -201,7 +201,7 @@ int main( )
     
     // vel of ball
     float vy = 0.0006f;
-    float vx = 0.0f;
+    float vx = 0.0005f;
     float vz = 0.0009f;
     
     // Game loop
@@ -270,9 +270,16 @@ int main( )
         double xpos = 0, ypos = 0;
         glfwGetCursorPos(window,&xpos, &ypos);
         
-        pos1X = (xpos/1440) * 2.0f - 1.0f;
-//        pos1Z = (ypos/900) * 2.0f - 1.0f;
+        //move bat1
+        
+        if(pos1X < -1.0f) pos1X = -0.96f;
+        if(pos1X > 1.0f) pos1X = 0.96f;
+        pos1X = (xpos/WIDTH) * 2.0f - 1.0f;
+        
 
+        pos1Y = -((ypos/HEIGHT) * 2.0f - 1.0f);
+        if(pos1Y < -1.0f) pos1Y = -1.0f;
+        
         model = glm::translate( model, glm::vec3( pos1X, pos1Y, pos1Z ) ); // Translate it down a bit so it's at the center of the scene
         
         model = glm::scale( model, glm::vec3( 0.002f, 0.002f, 0.002f ) );    // It's a bit too big for our scene, so scale it down
@@ -291,6 +298,7 @@ int main( )
         model2 = glm::scale( model2, glm::vec3( 0.002f, 0.002f, 0.002f ) );    // It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( model2 ) );
         bat.Draw( shader );
+        
         
         // </bat2 model>
         
@@ -313,12 +321,31 @@ int main( )
         //move ball
         
         
-        if(movebal == true)       moveBall(vx, vy, vz);
+      //  if(movebal == true)
+            moveBall(vx, vy, vz);
         
-        if(ballPosY > 0.04438f || ballPosY < -0.05f )    vy = -vy;
+      //  if(ballPosY > 0.04438f || ballPosY < pos1Y )    vy = -vy;
+   /*
+        pos2X = ballPosX;
+        if(ballPosY > pos2Y)
+        {
+            if(ballPosX < pos2X - 0.013 || ballPosX > pos2X + 0.013)  break;
+            else vy = -vy;
+        }
         
+        if(ballPosY <= pos1Y)
+        {
+            if(ballPosX < pos1X - 0.02 || ballPosX > pos1X + 0.02)  break;
+            else vy = -vy;
+        }
+        */
         
-        //   std::cout << "balPosY = " << ballPosY << endl;
+       // if( ballPosX > ((8.0/5.0)*(ballPosY + 0.04)+0.21) )    vx = -vx;
+        if(ballPosX > 0.2f || ballPosX < -0.2f )    vx = -vx;
+        
+     
+          
+        
         
         
         // </ball model>
@@ -331,7 +358,23 @@ int main( )
         
     }
     
-    std::cout << "x :  " << pos1X << std::endl << " y :  " << pos1Y <<  std::endl << " z :  " << pos1Z << std::endl;
+    
+    while ( !glfwWindowShouldClose( window ) )
+    {
+        // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
+        glfwPollEvents( );
+        
+        // Clear the colorbuffer
+        glClearColor( 0.2f, 0.3f, 0.3f, 1.0f );
+        glClear( GL_COLOR_BUFFER_BIT );
+        
+    
+        
+        glfwSwapBuffers( window );
+    }
+    
+    
+    std::cout << "x = " << ballPosX << std::endl << "y = " << ballPosY << std::endl << "Z = " << ballPosZ << std::endl ;
     
     glfwTerminate( );
     return 0;
@@ -370,14 +413,16 @@ void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
     
-    if ( GLFW_KEY_UP == key && GLFW_PRESS == action )   pos1Y += 0.02;
-    if ( GLFW_KEY_DOWN == key && GLFW_PRESS == action )   pos1Y -= 0.02;
+    if ( GLFW_KEY_UP == key && GLFW_PRESS == action )   ballPosY += 0.01;
+    if ( GLFW_KEY_DOWN == key && GLFW_PRESS == action )   ballPosY -= 0.01;
     
-    if ( GLFW_KEY_RIGHT == key && GLFW_PRESS == action )   pos1X += 0.1;
-    if ( GLFW_KEY_LEFT == key && GLFW_PRESS == action )   pos1X -= 0.1;
+    if ( GLFW_KEY_RIGHT == key && GLFW_PRESS == action )   ballPosX += 0.01;
+    if ( GLFW_KEY_LEFT == key && GLFW_PRESS == action )   ballPosX -= 0.01;
     
     if ( GLFW_KEY_W == key && GLFW_PRESS == action )   pos1Z += 0.2;
     if ( GLFW_KEY_S == key && GLFW_PRESS == action )   pos1Z -= 0.2;
+    
+    
     
     
     
@@ -423,12 +468,16 @@ void MouseCallback( GLFWwindow *window, double xPos, double yPos )
 
 
 
-
 void moveBall(float vx,float vy, float vz)
 {
+ 
     ballPosY += vy;
+    ballPosX += vx;
     //  ballPosZ -= vz;
     //  vy -= 0.0000009 /*deltaTime*/;
+  
+  
+    
 }
 
 
