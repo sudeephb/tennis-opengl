@@ -42,6 +42,8 @@ void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mod
 void MouseCallback( GLFWwindow *window, double xPos, double yPos );
 void DoMovement( );
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+bool inBetween(float p,float a, float b);
+
 
 void moveBall(float vx,float vy, float vz);
 
@@ -271,19 +273,18 @@ int main( )
         glfwGetCursorPos(window,&xpos, &ypos);
         
         //move bat1
-        
-        if(pos1X < -1.0f) pos1X = -0.96f;
-        if(pos1X > 1.0f) pos1X = 0.96f;
         pos1X = (xpos/WIDTH) * 2.0f - 1.0f;
-        
 
-        pos1Y = -((ypos/HEIGHT) * 2.0f - 1.0f);
-        if(pos1Y < -1.0f) pos1Y = -1.0f;
+        if(pos1X < -0.22f) pos1X = -0.20f;
+        if(pos1X > 0.22f) pos1X = 0.20f;
+
+       // pos1Y = -((ypos/HEIGHT) * 2.0f - 1.0f);
+      //  if(pos1Y < -1.0f) pos1Y = -1.0f;
         
-        model = glm::translate( model, glm::vec3( pos1X, pos1Y, pos1Z ) ); // Translate it down a bit so it's at the center of the scene
+        model = glm::translate(glm::mat4(), glm::vec3( pos1X, pos1Y, pos1Z ) ); // Translate it down a bit so it's at the center of the scene
         
         model = glm::scale( model, glm::vec3( 0.002f, 0.002f, 0.002f ) );    // It's a bit too big for our scene, so scale it down
-        glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( model ) );
+        glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( model));
         bat.Draw( shader );
         
         // </bat1 model>
@@ -318,30 +319,35 @@ int main( )
         
         
         
+        
         //move ball
+       /*
         
-        
-      //  if(movebal == true)
+        if(movebal == true)
             moveBall(vx, vy, vz);
         
+        if ((inBetween( ballPosX, pos1X - 0.02, pos1X + 0.02) && vy < 0) && ballPosY == -0.1)  vy = -vy;
+        
       //  if(ballPosY > 0.04438f || ballPosY < pos1Y )    vy = -vy;
-   /*
+   
         pos2X = ballPosX;
-        if(ballPosY > pos2Y)
+        if(ballPosY > 0.04438f)
         {
             if(ballPosX < pos2X - 0.013 || ballPosX > pos2X + 0.013)  break;
-            else vy = -vy;
+                else
+                vy = -vy;
         }
         
-        if(ballPosY <= pos1Y)
+        if(ballPosY < -0.11f)
         {
             if(ballPosX < pos1X - 0.02 || ballPosX > pos1X + 0.02)  break;
-            else vy = -vy;
+                else
+                vy = -vy;
         }
-        */
+    */
         
        // if( ballPosX > ((8.0/5.0)*(ballPosY + 0.04)+0.21) )    vx = -vx;
-        if(ballPosX > 0.2f || ballPosX < -0.2f )    vx = -vx;
+        //if(ballPosX > 0.2f || ballPosX < -0.2f )    vx = -vx;
         
      
           
@@ -349,6 +355,7 @@ int main( )
         
         
         // </ball model>
+        
         
         
         
@@ -486,6 +493,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
     if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
         movebal = true;
+}
+
+bool inBetween(float p, float a, float b)
+{
+    if( p < a || p > b) return false;
+    else
+        return true;
 }
 
 
