@@ -76,6 +76,7 @@
 		C096BED520037143009C9530 /* libglfw.3.2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libglfw.3.2.dylib; path = ../../../../../../usr/local/Cellar/glfw/3.2.1/lib/libglfw.3.2.dylib; sourceTree = "<group>"; };
 		C096BED720037154009C9530 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/OpenGL.framework; sourceTree = DEVELOPER_DIR; };
 		C096BED920037166009C9530 /* libGLEW.2.1.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libGLEW.2.1.0.dylib; path = ../../../../../../usr/local/Cellar/glew/2.1.0/lib/libGLEW.2.1.0.dylib; sourceTree = "<group>"; };
+		C0ED9E7C2043D8DC004DA914 /* Entity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Entity.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,6 +130,7 @@
 				C00B7A42203827CB0050DE61 /* main.cpp */,
 				C0281D18203B2CF200F7F15C /* Texture.h */,
 				C00B7A46203827D50050DE61 /* Camera.h */,
+				C0ED9E7C2043D8DC004DA914 /* Entity.h */,
 				C00B7A49203827EB0050DE61 /* SOIL2 */,
 				C00B7A48203827E10050DE61 /* resources */,
 				C00B7A44203827D50050DE61 /* Mesh.h */,

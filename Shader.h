@@ -93,6 +93,10 @@ public:
     {
         glUseProgram( this->Program );
     }
+    
+    void unUse() {
+        glUseProgram(0);
+    }
 };
 
 #endif

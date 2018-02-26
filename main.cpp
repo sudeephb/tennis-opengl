@@ -1,5 +1,6 @@
 // model -> bat1 , model2 ->bat2
 
+
 #include <string>
 #include <iostream>
 
@@ -15,6 +16,7 @@
 #include "Camera.h"
 #include "Model.h"
 #include "Texture.h"
+#include "Entity.h"
 
 // GLM Mathemtics
 #include <glm/glm.hpp>
@@ -27,37 +29,26 @@
 // Properties
 const GLuint WIDTH = 1440, HEIGHT = 900;
 int SCREEN_WIDTH, SCREEN_HEIGHT;
-float pos1X = 0.0f,pos1Y = -0.06f,pos1Z = 2.8f;
-float pos2X = 0.0f,pos2Y = 0.06f,pos2Z = 2.6f;
 
 
-float ballPosX = 0.0f;
-float ballPosY = -0.05f;
-float ballPosZ = 2.7f;
-
-bool movebal = false;
 
 // Function prototypes
 void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mode );
 void MouseCallback( GLFWwindow *window, double xPos, double yPos );
 void DoMovement( );
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
-bool inBetween(float p,float a, float b);
+glm::mat4 createTransformationMatrix(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale);
+//void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
 
-void moveBall(float vx,float vy, float vz);
 
 // Camera
-Camera camera( glm::vec3( 0.0f, 0.0f, 3.0f ) );
 bool keys[1024];
-GLfloat lastX = 400, lastY = 300;
-bool firstMouse = true;
-
-GLfloat deltaTime = 0.0f;
-GLfloat lastFrame = 0.0f;
 
 
 
+Entity* playerBat;
+Entity* opponentBat;
+Entity* ball;
 
 
 int main( )
@@ -96,7 +87,7 @@ int main( )
     // glfwSetCursorPosCallback( window, MouseCallback );
     
     
-    glfwSetMouseButtonCallback(window, mouse_button_callback);
+//    glfwSetMouseButtonCallback(window, mouse_button_callback);
     
     
     // GLFW Options
@@ -123,7 +114,7 @@ int main( )
     //<ground>
     
     // Setup and compile our ground shaders
-    Shader groundShader( "resources/shaders/ground.vs", "resources/shaders/ground.frag" );
+   
  //   Shader netShader( "resources/shaders/net", "resources/shaders/net.frag" );
     
     GLfloat groundVertices[] =
@@ -167,206 +158,86 @@ int main( )
     // Load textures
     GLuint groundTexture = TextureLoading::LoadTexture( "resources/images/court_top_view1.jpg" );
     GLuint netTexture = TextureLoading::LoadTexture("resources/images/net.png");
-    
-    glm::mat4 groundmodel;
-    groundmodel = glm::rotate(groundmodel, glm::radians(-71.0f), glm::vec3(1.0f, 0.0f, 0.0f))*glm::rotate(groundmodel, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    
-    glm::mat4 groundview;
-    groundview = glm::translate(groundview, glm::vec3(0.0f, 0.0f, -0.868f));
-    
-    glm::mat4 groundprojection;
-    groundprojection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT , 0.1f, 100.0f);
-    
-    //</ground>
-    
-    
-    
-    
-    
-    
-    
+
     
     // Setup and compile our bat shaders
+    Shader groundShader( "resources/shaders/ground.vs", "resources/shaders/ground.frag" );
     Shader shader( "resources/shaders/modelLoading.vs", "resources/shaders/modelLoading.frag" );
+
     
-    // Load models
-    Model bat( "resources/models/sujitBat/racket.obj" );
-    Model ball( "resources/models/pgoball/PokemonGoBall.obj" );
+    playerBat = new Entity(glm::vec3(0.0f, -0.15f, -0.5f), glm::vec3(0.0f), glm::vec3(0.01f),"resources/models/sujitBat/racket.obj");
+    opponentBat = new Entity(glm::vec3(0.0f, 0.3f, -2.0f), glm::vec3(0.0f), glm::vec3(0.01f),"resources/models/sujitBat/racket.obj");
+    ball = new Entity(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(0.002),"resources/models/pgoball/PokemonGoBall.obj");
     // Draw in wireframe
     //glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-    
+    glClearColor( 0.2f, 1.0f, 1.0f, 1.0f );
     
     //  glm::mat4 projection = glm::perspective( camera.GetZoom( ), ( float )SCREEN_WIDTH/( float )SCREEN_HEIGHT, 0.1f, 100.0f );
     glm::mat4 projection = glm::perspective( glm::radians(45.0f), ( float )SCREEN_WIDTH/( float )SCREEN_HEIGHT, 0.1f, 100.0f );
+    glm::mat4 groundmodel, groundview;
+    
+    groundShader.Use();
+    groundmodel = glm::rotate(groundmodel, glm::radians(-71.0f), glm::vec3(1.0f, 0.0f, 0.0f))*glm::rotate(groundmodel, glm::radians(90.0f),glm::vec3(0.0f, 0.0f, 1.0f));
+    groundview = glm::translate(groundview, glm::vec3(0.0f, 0.0f, -1.0f));
+    
+    GLint groundprojLoc = glGetUniformLocation( groundShader.Program, "groundprojection" );
+    GLint groundmodelLoc = glGetUniformLocation( groundShader.Program, "groundmodel" );
+    GLint groundviewLoc = glGetUniformLocation( groundShader.Program, "groundview" );
+    
+    glUniformMatrix4fv( groundprojLoc, 1, GL_FALSE, glm::value_ptr(projection));
+    glUniformMatrix4fv( groundviewLoc, 1, GL_FALSE, glm::value_ptr(groundview));
+    
+    groundShader.unUse();
+    
+    shader.Use();
+    GLint modelProjectionLoc = glGetUniformLocation( shader.Program, "projection" );
+    GLint modelTransformationLoc = glGetUniformLocation( shader.Program, "transformation" );
+    GLint modelViewLoc = glGetUniformLocation( shader.Program, "view" );
+    glUniformMatrix4fv(modelProjectionLoc,1, GL_FALSE, glm::value_ptr(projection));
+    shader.unUse();
     
     
-    
-    // vel of ball
-    float vy = 0.0006f;
-    float vx = 0.0005f;
-    float vz = 0.0009f;
-    
-    // Game loop
     while( !glfwWindowShouldClose( window ) )
     {
-        // Set frame time
-        GLfloat currentFrame = glfwGetTime( );
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-        
-        // Check and call events
         glfwPollEvents( );
-        // DoMovement( );
-        
-        // Clear the colorbuffer
-        glClearColor( 0.2f, 1.0f, 1.0f, 1.0f );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         
-        
-        
-        
-        // <ground>
-        
-        // Draw our ground
+    
         groundShader.Use( );
-        
-        // Bind Textures using texture units
         glActiveTexture( GL_TEXTURE0 );
         glBindTexture( GL_TEXTURE_2D, groundTexture );
         glUniform1i( glGetUniformLocation( shader.Program, "texture1" ), 0 );
-        
-        // Get the uniform locations
-        GLint groundmodelLoc = glGetUniformLocation( groundShader.Program, "groundmodel" );
-        GLint groundviewLoc = glGetUniformLocation( groundShader.Program, "groundview" );
-        GLint groundprojLoc = glGetUniformLocation( groundShader.Program, "groundprojection" );
-        
-        // Pass the matrices to the shader
-        glUniformMatrix4fv( groundviewLoc, 1, GL_FALSE, glm::value_ptr( groundview ) );
-        glUniformMatrix4fv( groundprojLoc, 1, GL_FALSE, glm::value_ptr( groundprojection ) );
-        
         glBindVertexArray( groundVAO );
-        
-        // Calculate the model matrix for each object and pass it to shader before drawing
         glUniformMatrix4fv( groundmodelLoc, 1, GL_FALSE, glm::value_ptr( groundmodel ) );
         
         glDrawArrays( GL_TRIANGLES, 0, 6 );
         glBindVertexArray( 0 );
+        groundShader.unUse();
+        //ball->draw(shader);
         
-        // </ground>
+        shader.Use();
         
-        
-        
-        
-        
-        // <bat1 model>
-        
-        shader.Use( );
-        
-        glm::mat4 view = camera.GetViewMatrix();
-        
-        glUniformMatrix4fv( glGetUniformLocation( shader.Program, "projection" ), 1, GL_FALSE, glm::value_ptr( projection ) );
-        glUniformMatrix4fv( glGetUniformLocation( shader.Program, "view" ), 1, GL_FALSE, glm::value_ptr( view ) );
-        
-        // Draw the loaded model
-        glm::mat4 model;
-        double xpos = 0, ypos = 0;
-        glfwGetCursorPos(window,&xpos, &ypos);
-        
-        //move bat1
-        pos1X = (xpos/WIDTH) * 2.0f - 1.0f;
+        glm::mat4 transformationMatrix = createTransformationMatrix(playerBat->getPosition(), playerBat->getRotation(), playerBat->getScale());
+        glUniformMatrix4fv(modelTransformationLoc, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
+      
+        playerBat->draw(shader);
 
-        if(pos1X < -0.22f) pos1X = -0.20f;
-        if(pos1X > 0.22f) pos1X = 0.20f;
+        transformationMatrix = createTransformationMatrix(opponentBat->getPosition(), opponentBat->getRotation(), opponentBat->getScale());
+        glUniformMatrix4fv(modelTransformationLoc, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
 
-       // pos1Y = -((ypos/HEIGHT) * 2.0f - 1.0f);
-      //  if(pos1Y < -1.0f) pos1Y = -1.0f;
+        opponentBat->draw(shader);
+        shader.unUse();
+                
         
-        model = glm::translate(glm::mat4(), glm::vec3( pos1X, pos1Y, pos1Z ) ); // Translate it down a bit so it's at the center of the scene
+    
         
-        model = glm::scale( model, glm::vec3( 0.002f, 0.002f, 0.002f ) );    // It's a bit too big for our scene, so scale it down
-        glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( model));
-        bat.Draw( shader );
-        
-        // </bat1 model>
-        
-        
-        
-        // <bat2 model>
-        
-        glm::mat4 model2;
-        model2 = glm::translate( model2, glm::vec3( pos2X, pos2Y, pos2Z ) ); // Translate it down a bit so it's at the center of the scene
-        
-        model2 = glm::scale( model2, glm::vec3( 0.002f, 0.002f, 0.002f ) );    // It's a bit too big for our scene, so scale it down
-        glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( model2 ) );
-        bat.Draw( shader );
-        
-        
-        // </bat2 model>
-        
-        
-        
-        
-        // <ball model>
-        
-        
-        
-        
-        glm::mat4 ballModel;
-        ballModel = glm::translate( ballModel, glm::vec3( ballPosX, ballPosY, ballPosZ ) );
-        ballModel = glm::scale( ballModel, glm::vec3( 0.00005f, 0.00005f, 0.00005f ) );    // It's a bit too big for our scene, so scale it down
-        glUniformMatrix4fv( glGetUniformLocation( shader.Program, "model" ), 1, GL_FALSE, glm::value_ptr( ballModel ) );
-        ball.Draw( shader );
-        
-        
-        
-        
-        //move ball
-       /*
-        
-        if(movebal == true)
-            moveBall(vx, vy, vz);
-        
-        if ((inBetween( ballPosX, pos1X - 0.02, pos1X + 0.02) && vy < 0) && ballPosY == -0.1)  vy = -vy;
-        
-      //  if(ballPosY > 0.04438f || ballPosY < pos1Y )    vy = -vy;
-   
-        pos2X = ballPosX;
-        if(ballPosY > 0.04438f)
-        {
-            if(ballPosX < pos2X - 0.013 || ballPosX > pos2X + 0.013)  break;
-                else
-                vy = -vy;
-        }
-        
-        if(ballPosY < -0.11f)
-        {
-            if(ballPosX < pos1X - 0.02 || ballPosX > pos1X + 0.02)  break;
-                else
-                vy = -vy;
-        }
-    */
-        
-       // if( ballPosX > ((8.0/5.0)*(ballPosY + 0.04)+0.21) )    vx = -vx;
-        //if(ballPosX > 0.2f || ballPosX < -0.2f )    vx = -vx;
-        
-     
-          
-        
-        
-        
-        // </ball model>
-        
-        
-        
-        
-        
-        // Swap the buffers
+       
         glfwSwapBuffers( window );
         
     }
     
     
-    while ( !glfwWindowShouldClose( window ) )
+    /*while ( !glfwWindowShouldClose( window ) )
     {
         // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents( );
@@ -379,38 +250,16 @@ int main( )
         
         glfwSwapBuffers( window );
     }
+     */
     
     
-    std::cout << "x = " << ballPosX << std::endl << "y = " << ballPosY << std::endl << "Z = " << ballPosZ << std::endl ;
     
     glfwTerminate( );
     return 0;
 }
 
 // Moves/alters the camera positions based on user input
-void DoMovement( )
-{
-    // Camera controls
-    if ( keys[GLFW_KEY_W] || keys[GLFW_KEY_UP] )
-    {
-        camera.ProcessKeyboard( FORWARD, deltaTime );
-    }
-    
-    if ( keys[GLFW_KEY_S] || keys[GLFW_KEY_DOWN] )
-    {
-        camera.ProcessKeyboard( BACKWARD, deltaTime );
-    }
-    
-    if ( keys[GLFW_KEY_A] || keys[GLFW_KEY_LEFT] )
-    {
-        camera.ProcessKeyboard( LEFT, deltaTime );
-    }
-    
-    if ( keys[GLFW_KEY_D] || keys[GLFW_KEY_RIGHT] )
-    {
-        camera.ProcessKeyboard( RIGHT, deltaTime );
-    }
-}
+
 
 // Is called whenever a key is pressed/released via GLFW
 void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mode )
@@ -420,16 +269,7 @@ void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mod
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
     
-    if ( GLFW_KEY_UP == key && GLFW_PRESS == action )   ballPosY += 0.01;
-    if ( GLFW_KEY_DOWN == key && GLFW_PRESS == action )   ballPosY -= 0.01;
-    
-    if ( GLFW_KEY_RIGHT == key && GLFW_PRESS == action )   ballPosX += 0.01;
-    if ( GLFW_KEY_LEFT == key && GLFW_PRESS == action )   ballPosX -= 0.01;
-    
-    if ( GLFW_KEY_W == key && GLFW_PRESS == action )   pos1Z += 0.2;
-    if ( GLFW_KEY_S == key && GLFW_PRESS == action )   pos1Z -= 0.2;
-    
-    
+   
     
     
     
@@ -454,46 +294,7 @@ void KeyCallback( GLFWwindow *window, int key, int scancode, int action, int mod
     
 }
 
-void MouseCallback( GLFWwindow *window, double xPos, double yPos )
-{
-    if ( firstMouse )
-    {
-        lastX = xPos;
-        lastY = yPos;
-        firstMouse = false;
-    }
-    
-    GLfloat xOffset = xPos - lastX;
-    GLfloat yOffset = yPos - lastY;  // Reversed since y-coordinates go from bottom to left
-    
-    lastX = xPos;
-    lastY = yPos;
-    
-    camera.ProcessMouseMovement( xOffset, yOffset );
-}
 
-
-
-
-void moveBall(float vx,float vy, float vz)
-{
- 
-    ballPosY += vy;
-    ballPosX += vx;
-    //  ballPosZ -= vz;
-    //  vy -= 0.0000009 /*deltaTime*/;
-  
-  
-    
-}
-
-
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-        movebal = true;
-}
 
 bool inBetween(float p, float a, float b)
 {
@@ -502,7 +303,19 @@ bool inBetween(float p, float a, float b)
         return true;
 }
 
-
+glm::mat4 createTransformationMatrix(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale){
+    
+    glm::mat4 model = glm::mat4();
+    
+    model = glm::translate(glm::mat4(), position);
+  //  model = glm::rotate(model,glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+   // model = glm::rotate(model,glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    //model = glm::rotate(model,glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    
+    model = glm::scale(model, scale);
+    
+    return model;
+}
 
 
 
